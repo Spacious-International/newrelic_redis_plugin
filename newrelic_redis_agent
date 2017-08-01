@@ -221,9 +221,7 @@ runner.execute do |opts|
         result = nil
         begin
           result = @redis.client.call(
-            # Only getting at most 1000 entries
-            # to avoid unexpected large performance impact
-            "slowlog get 1000".split(" ")
+            "slowlog get".split(" ")
           )
         rescue => e
           $stderr.puts(e.message)
@@ -241,7 +239,18 @@ runner.execute do |opts|
           end
         end
 
-        REDIS_COMMAND_NAMES_TO_MONITOR.each do |command_name|
+        entries_since_last_report = entries.select do |entry|
+          entry.unix_timestamp >= @last_metric_report_time.to_i
+        end
+
+        entries_since_last_report_per_command_name =
+          entries_since_last_report.group_by do |entry|
+            entry.command_arguments.first
+          end
+
+        entries_since_last_report_per_command_name.
+          each_pair do |command_name, entries_for_command_since_last_report|
+
           prefix = "Latency/Slow Log/#{command_name.upcase}"
 
           average_val_metric_name =
@@ -250,46 +259,6 @@ runner.execute do |opts|
             "#{prefix}/Maximum Latency Since Last Report"
           total_entry_count_metric_name =
             "#{prefix}/Total Entries Since Last Report"
-
-          if entries.empty?
-            report_metric(
-              average_val_metric_name,
-              "millisecond",
-              -1,
-            )
-            report_metric(
-              average_val_metric_name,
-              "microsecond",
-              -1,
-            )
-
-            report_metric(
-              maximum_val_metric_name,
-              "millisecond",
-              -1,
-            )
-            report_metric(
-              maximum_val_metric_name,
-              "microsecond",
-              -1,
-            )
-
-            report_metric(
-              total_entry_count_metric_name,
-              "entry",
-              -1,
-            )
-
-            next
-          end
-
-          entries_for_command = entries.select do |entry|
-            # Case insensitive match
-            entry.command_arguments.first.downcase == command_name.downcase
-          end
-          entries_for_command_since_last_report = entries_for_command.select do |entry|
-            entry.unix_timestamp >= @last_metric_report_time.to_i
-          end
 
           # Avoid divide by zero
           if entries_for_command_since_last_report.empty?
@@ -381,39 +350,6 @@ runner.execute do |opts|
         "aof-fstat",
         "aof-rewrite-diff-write",
         "aof-rename",
-      ].map(&:freeze).freeze
-
-
-      REDIS_COMMAND_NAMES_TO_MONITOR = [
-        # Just for testing
-        "DEBUG",
-
-        # "monitoring" commands?
-        "INFO",
-        "LATENCY",
-        "SLOWLOG",
-
-        # Connection
-        "CONNECT",
-        "AUTH",
-        "CLIENT",
-
-        # read only
-        "GET",
-        "MGET",
-
-        # Write
-        "SET",
-        "SETEX",
-        "SETNX",
-        "HMSET",
-        "EXPIRE",
-
-        # Removal
-        "DEL",
-
-        # Start of transaction
-        "MULTI",
       ].map(&:freeze).freeze
 
 
