@@ -218,10 +218,20 @@ runner.execute do |opts|
       end
 
       def report_slowlog_entries_metrics_since_last_report
+        entry_count = nil
+        begin
+          entry_count = @redis.client.call(
+            "SLOWLOG LEN".split(" ")
+          )
+        rescue => e
+          $stderr.puts(e.message)
+          return
+        end
+
         result = nil
         begin
           result = @redis.client.call(
-            "slowlog get".split(" ")
+            "SLOWLOG GET #{entry_count}".split(" ")
           )
         rescue => e
           $stderr.puts(e.message)
