@@ -228,6 +228,12 @@ runner.execute do |opts|
           return
         end
 
+        report_metric(
+          "Latency/Slow Log/Total Entries",
+          "entry",
+          entry_count,
+        )
+
         result = nil
         begin
           result = @redis.client.call(
