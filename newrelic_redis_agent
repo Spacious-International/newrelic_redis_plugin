@@ -48,6 +48,8 @@ runner.execute do |opts|
       end
 
       def poll_cycle
+        @last_metric_poll_cycle_start_time = ::Time.now
+
         begin
           @redis_info = @redis.info
           info = @redis_info
@@ -256,7 +258,7 @@ runner.execute do |opts|
         end
 
         entries_since_last_report = entries.select do |entry|
-          entry.unix_timestamp >= @last_metric_report_time.to_i
+          entry.unix_timestamp >= @last_metric_poll_cycle_start_time.to_i
         end
 
         entries_since_last_report_per_command_name =
