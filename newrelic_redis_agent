@@ -45,10 +45,13 @@ runner.execute do |opts|
         @last_values = {}
         @redis_info = nil
         @last_metric_report_time = ::Time.now
+        @last_metric_poll_cycle_start_time = ::Time.now
+        @this_metric_poll_cycle_start_time = ::Time.now
       end
 
       def poll_cycle
-        @last_metric_poll_cycle_start_time = ::Time.now
+        @last_metric_poll_cycle_start_time = @this_metric_poll_cycle_start_time
+        @this_metric_poll_cycle_start_time = ::Time.now
 
         begin
           @redis_info = @redis.info
