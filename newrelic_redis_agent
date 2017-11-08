@@ -137,8 +137,8 @@ runner.execute do |opts|
             "#{prefix}/Total Entries Since Last Report"
 
           begin
-            result = @redis.client.call(
-              "latency history #{latency_event_name}".split(" ")
+            result = @redis.call(
+              *"latency history #{latency_event_name}".split(" ")
             )
           rescue => e
             $stderr.puts(e.message)
@@ -225,8 +225,8 @@ runner.execute do |opts|
       def report_slowlog_entries_metrics_since_last_report
         entry_count = nil
         begin
-          entry_count = @redis.client.call(
-            "SLOWLOG LEN".split(" ")
+          entry_count = @redis.call(
+            *"SLOWLOG LEN".split(" ")
           )
         rescue => e
           $stderr.puts(e.message)
@@ -241,8 +241,8 @@ runner.execute do |opts|
 
         result = nil
         begin
-          result = @redis.client.call(
-            "SLOWLOG GET #{entry_count}".split(" ")
+          result = @redis.call(
+            *"SLOWLOG GET #{entry_count}".split(" ")
           )
         rescue => e
           $stderr.puts(e.message)
